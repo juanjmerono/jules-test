@@ -598,6 +598,37 @@ export function createGameTextures(scene) {
   door.fillRect(30, 80, 5, 2);
   door.generateTexture('doorway', 44, 140);
 
+  // Door Security Lock Overlays (Red locked status & Green unlocked status)
+  const doorLocked = scene.make.graphics({ x: 0, y: 0, add: false });
+  doorLocked.fillStyle(0xbf616a, 0.9); // Red LED indicator box
+  doorLocked.fillRect(0, 0, 36, 18);
+  doorLocked.lineStyle(2, 0xd08770, 1);
+  doorLocked.strokeRect(0, 0, 36, 18);
+  doorLocked.fillStyle(0xffffff, 1);
+  doorLocked.fillRect(14, 4, 8, 5); // Lock shackle
+  doorLocked.fillRect(12, 8, 12, 6); // Lock body
+  doorLocked.generateTexture('door_locked', 36, 18);
+
+  const doorUnlocked = scene.make.graphics({ x: 0, y: 0, add: false });
+  doorUnlocked.fillStyle(0xa3be8c, 0.9); // Green LED indicator box
+  doorUnlocked.fillRect(0, 0, 36, 18);
+  doorUnlocked.lineStyle(2, 0x8fbcbb, 1);
+  doorUnlocked.strokeRect(0, 0, 36, 18);
+  doorUnlocked.fillStyle(0xffffff, 1);
+  doorUnlocked.fillRect(12, 8, 12, 6); // Open lock body
+  doorUnlocked.fillRect(18, 3, 6, 5); // Open shackle
+  doorUnlocked.generateTexture('door_unlocked', 36, 18);
+
+  // Keycard Item Texture
+  const keycardG = scene.make.graphics({ x: 0, y: 0, add: false });
+  keycardG.fillStyle(0xebcb8b, 1); // Gold plastic security card
+  keycardG.fillRect(0, 0, 24, 16);
+  keycardG.fillStyle(0x2e3440, 1); // Magnetic stripe
+  keycardG.fillRect(0, 3, 24, 4);
+  keycardG.fillStyle(0x88c0d0, 1); // Embedded smart chip
+  keycardG.fillRect(4, 9, 5, 4);
+  keycardG.generateTexture('keycard', 24, 16);
+
   // 10. NPC Sprites (Dev, Engineer, CEO)
   // Dev NPC (Orange hoodie, headphones, glasses, jeans, sneakers)
   const devNpc = scene.make.graphics({ x: 0, y: 0, add: false });

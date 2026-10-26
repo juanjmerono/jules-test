@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { soundManager } from '../utils/SoundManager.js';
 
 export class VictoryScene extends Phaser.Scene {
   constructor() {
@@ -11,6 +12,7 @@ export class VictoryScene extends Phaser.Scene {
   }
 
   create() {
+    soundManager.playVictory();
     this.add.rectangle(480, 270, 960, 540, 0x0f111a, 0.95);
 
     this.add.text(480, 120, '🎉 COMPANY SAVED! 🎉', {
@@ -64,6 +66,7 @@ export class VictoryScene extends Phaser.Scene {
     });
 
     this.input.keyboard.once('keydown-R', () => {
+      soundManager.playSelect();
       this.scene.start('MainScene', { loopCount: 1 });
     });
   }
