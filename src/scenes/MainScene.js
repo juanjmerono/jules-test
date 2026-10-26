@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { soundManager } from '../utils/SoundManager.js';
+import { t, LANGUAGES, getLanguage, setLanguage, onLanguageChange } from '../utils/Localization.js';
 
 export class MainScene extends Phaser.Scene {
   constructor() {
@@ -29,9 +30,9 @@ export class MainScene extends Phaser.Scene {
 
     // Doors & Access Keys
     this.doors = [
-      { id: 'door1', x: 800, locked: true, name: 'DEV BAY DOOR', key: 'key_dev_bay' },
-      { id: 'door2', x: 1600, locked: true, name: 'SERVER ROOM DOOR', key: 'key_server_room' },
-      { id: 'door3', x: 2400, locked: true, name: 'BOARDROOM DOOR', key: 'key_boardroom' }
+      { id: 'door1', x: 800, locked: true, nameKey: 'door1_name', key: 'key_dev_bay' },
+      { id: 'door2', x: 1600, locked: true, nameKey: 'door2_name', key: 'key_server_room' },
+      { id: 'door3', x: 2400, locked: true, nameKey: 'door3_name', key: 'key_boardroom' }
     ];
 
     this.inventory = {
@@ -98,15 +99,67 @@ export class MainScene extends Phaser.Scene {
       loop: true
     });
 
-    // Define Quiz Questions
-    this.setupQuizQuestions();
+    // Subscribe to language change events
+    this.unsubscribeLang = onLanguageChange(() => {
+      this.updateTextsOnLangChange();
+    });
+  }
+
+  getQuizQuestions() {
+    return {
+      whiteboard: {
+        title: t('quiz_whiteboard_title'),
+        question: t('quiz_whiteboard_q'),
+        options: [
+          { text: t('quiz_whiteboard_o1'), correct: true, feedback: t('quiz_whiteboard_f1') },
+          { text: t('quiz_whiteboard_o2'), correct: false, penaltyMins: 30, penaltyProd: 10, feedback: t('quiz_whiteboard_f2') },
+          { text: t('quiz_whiteboard_o3'), correct: false, penaltyMins: 45, penaltyProd: 15, feedback: t('quiz_whiteboard_f3') }
+        ]
+      },
+      cto_laptop: {
+        title: t('quiz_laptop_title'),
+        question: t('quiz_laptop_q'),
+        options: [
+          { text: t('quiz_laptop_o1'), correct: false, penaltyMins: 30, penaltyVal: 1000000, feedback: t('quiz_laptop_f1') },
+          { text: t('quiz_laptop_o2'), correct: true, feedback: t('quiz_laptop_f2') },
+          { text: t('quiz_laptop_o3'), correct: false, penaltyMins: 25, penaltyProd: 10, feedback: t('quiz_laptop_f3') }
+        ]
+      },
+      dev_team: {
+        title: t('quiz_dev_title'),
+        question: t('quiz_dev_q'),
+        options: [
+          { text: t('quiz_dev_o1'), correct: false, penaltyMins: 30, penaltyProd: 15, feedback: t('quiz_dev_f1') },
+          { text: t('quiz_dev_o2'), correct: true, feedback: t('quiz_dev_f2') },
+          { text: t('quiz_dev_o3'), correct: false, penaltyMins: 30, penaltyProd: 20, feedback: t('quiz_dev_f3') }
+        ]
+      },
+      server_engineer: {
+        title: t('quiz_server_title'),
+        question: t('quiz_server_q'),
+        options: [
+          { text: t('quiz_server_o1'), correct: false, penaltyMins: 40, penaltyVal: 500000, feedback: t('quiz_server_f1') },
+          { text: t('quiz_server_o2'), correct: true, feedback: t('quiz_server_f2') },
+          { text: t('quiz_server_o3'), correct: false, penaltyMins: 35, penaltyProd: 10, feedback: t('quiz_server_f3') }
+        ]
+      },
+      boardroom_ceo: {
+        title: t('quiz_board_title'),
+        question: t('quiz_board_q'),
+        options: [
+          { text: t('quiz_board_o1'), correct: true, feedback: t('quiz_board_f1') },
+          { text: t('quiz_board_o2'), correct: false, penaltyMins: 30, penaltyVal: 2000000, feedback: t('quiz_board_f2') },
+          { text: t('quiz_board_o3'), correct: false, penaltyMins: 30, penaltyProd: 10, feedback: t('quiz_board_f3') }
+        ]
+      }
+    };
   }
 
   createOfficeLayout() {
     const bgGraphics = this.add.graphics();
 
     // 1. CTO Office (x: 0 - 800)
-    bgGraphics.fillStyle(0x1f293d, 1); // Dark Navy Wall
+    bgGraphics.fillStyle(0x1f293d, 1);
     bgGraphics.fillRect(0, 0, 800, 540);
     bgGraphics.fillStyle(0x2c1f14, 1);
     bgGraphics.fillRect(0, 280, 800, 180);
@@ -176,20 +229,22 @@ export class MainScene extends Phaser.Scene {
     this.floorLayer = floor;
 
     // Room Partition Labels
-    const roomNames = [
-      { name: '1. CTO OFFICE', x: 400 },
-      { name: '2. DEV BAY', x: 1200 },
-      { name: '3. SERVER ROOM', x: 2000 },
-      { name: '4. BOARDROOM', x: 2800 }
+    this.roomTextElements = [];
+    const rooms = [
+      { key: 'room_cto', x: 400 },
+      { key: 'room_dev', x: 1200 },
+      { key: 'room_server', x: 2000 },
+      { key: 'room_boardroom', x: 2800 }
     ];
 
-    roomNames.forEach(room => {
-      this.add.text(room.x, 65, room.name, {
+    rooms.forEach(room => {
+      const txt = this.add.text(room.x, 65, t(room.key), {
         fontFamily: 'Courier New',
         fontSize: '16px',
         color: '#88c0d0',
         fontStyle: 'bold'
       }).setOrigin(0.5);
+      this.roomTextElements.push({ key: room.key, text: txt });
     });
 
     // Place Background Windows & Decorative Wall Items
@@ -301,7 +356,7 @@ export class MainScene extends Phaser.Scene {
         x: 150,
         y: this.FLOOR_Y - 30,
         radius: 80,
-        prompt: '[E] AI Strategy Roadmap Quiz',
+        promptKey: 'prompt_whiteboard',
         action: () => this.openQuizModal('whiteboard')
       },
       {
@@ -309,7 +364,7 @@ export class MainScene extends Phaser.Scene {
         x: 450,
         y: this.FLOOR_Y - 26,
         radius: 70,
-        prompt: '[E] Code Audit Quiz',
+        promptKey: 'prompt_cto_laptop',
         action: () => this.openQuizModal('cto_laptop')
       },
       {
@@ -317,7 +372,7 @@ export class MainScene extends Phaser.Scene {
         x: 800,
         y: this.FLOOR_Y - 40,
         radius: 70,
-        prompt: '[E] Unlock Dev Bay Door',
+        promptKey: 'prompt_door1',
         action: () => this.handleDoorInteraction('door1')
       },
       {
@@ -325,7 +380,7 @@ export class MainScene extends Phaser.Scene {
         x: 1150,
         y: this.FLOOR_Y - 24,
         radius: 80,
-        prompt: '[E] Train Devs on AI Copilot',
+        promptKey: 'prompt_dev_team',
         action: () => this.openQuizModal('dev_team')
       },
       {
@@ -333,7 +388,7 @@ export class MainScene extends Phaser.Scene {
         x: 1550,
         y: this.FLOOR_Y - 22,
         radius: 60,
-        prompt: '[E] Grab Coffee (Speed Boost)',
+        promptKey: 'prompt_coffee',
         action: () => this.handleCoffeeInteraction()
       },
       {
@@ -341,7 +396,7 @@ export class MainScene extends Phaser.Scene {
         x: 1600,
         y: this.FLOOR_Y - 40,
         radius: 70,
-        prompt: '[E] Unlock Server Room Door',
+        promptKey: 'prompt_door2',
         action: () => this.handleDoorInteraction('door2')
       },
       {
@@ -349,7 +404,7 @@ export class MainScene extends Phaser.Scene {
         x: 2050,
         y: this.FLOOR_Y - 24,
         radius: 80,
-        prompt: '[E] Deploy AI GPU Cluster',
+        promptKey: 'prompt_server_engineer',
         action: () => this.openQuizModal('server_engineer')
       },
       {
@@ -357,7 +412,7 @@ export class MainScene extends Phaser.Scene {
         x: 2400,
         y: this.FLOOR_Y - 40,
         radius: 70,
-        prompt: '[E] Unlock Boardroom Door',
+        promptKey: 'prompt_door3',
         action: () => this.handleDoorInteraction('door3')
       },
       {
@@ -365,60 +420,10 @@ export class MainScene extends Phaser.Scene {
         x: 2950,
         y: this.FLOOR_Y - 24,
         radius: 80,
-        prompt: '[E] Pitch AI ROI to CEO',
+        promptKey: 'prompt_boardroom_ceo',
         action: () => this.openQuizModal('boardroom_ceo')
       }
     ];
-  }
-
-  setupQuizQuestions() {
-    this.quizQuestions = {
-      whiteboard: {
-        title: '📋 WHITEBOARD: AI STRATEGY ROADMAP',
-        question: 'How should we handle legacy monolith migration to AI microservices?',
-        options: [
-          { text: '1) Implement RAG pipeline & auto-generate CI/CD tests', correct: true, feedback: 'Correct! RAG pipeline accelerates legacy transition!' },
-          { text: '2) Rewrite 500k lines of code manually in Assembly', correct: false, penaltyMins: 30, penaltyProd: 10, feedback: 'Failed! Manual rewrite caused huge project delay (+30m).' },
-          { text: '3) Ignore legacy systems and hope AI solves it by magic', correct: false, penaltyMins: 45, penaltyProd: 15, feedback: 'Failed! Systems crashed without maintenance (+45m).' }
-        ]
-      },
-      cto_laptop: {
-        title: '💻 CTO LAPTOP: CODE REPOSITORY AUDIT',
-        question: 'Which model architecture is safest for on-premise code synthesis?',
-        options: [
-          { text: '1) Send all proprietary source code to unvetted public cloud API', correct: false, penaltyMins: 30, penaltyVal: 1000000, feedback: 'Failed! Data leak triggered corporate security alarm! (-$1.0M)' },
-          { text: '2) Fine-tuned 14B parameter Code-LLM hosted on local GPUs', correct: true, feedback: 'Correct! High performance with total data privacy!' },
-          { text: '3) Use a random regex script from Stack Overflow', correct: false, penaltyMins: 25, penaltyProd: 10, feedback: 'Failed! Script caused syntax errors across repos (+25m).' }
-        ]
-      },
-      dev_team: {
-        title: '👩‍💻 DEV BAY: AI COPILOT ONBOARDING',
-        question: 'Devs fear AI code hallucinations. How do you ensure code quality?',
-        options: [
-          { text: '1) Tell devs to accept all AI suggestions without checking', correct: false, penaltyMins: 30, penaltyProd: 15, feedback: 'Failed! Blind trust produced critical bugs (+30m, -15% prod).' },
-          { text: '2) Mandatory automated unit testing & Human-in-the-Loop review', correct: true, feedback: 'Correct! Devs gain 2x speed with zero quality loss!' },
-          { text: '3) Ban AI completely and force devs to use punch cards', correct: false, penaltyMins: 30, penaltyProd: 20, feedback: 'Failed! Developers threatened to quit (+30m, -20% prod).' }
-        ]
-      },
-      server_engineer: {
-        title: '🖥️ SERVER ROOM: AI CLUSTER DEPLOYMENT',
-        question: 'The GPU cluster overheats during fine-tuning. How do you resolve it?',
-        options: [
-          { text: '1) Pour iced coffee directly onto GPU PCIe slots', correct: false, penaltyMins: 40, penaltyVal: 500000, feedback: 'Failed! Hardware fried by iced coffee! (-$500k)' },
-          { text: '2) Optimize batch size, FP16 precision & liquid cooling loops', correct: true, feedback: 'Correct! Maximum TFLOPS achieved at optimal thermals!' },
-          { text: '3) Turn off server fans to make the room quiet', correct: false, penaltyMins: 35, penaltyProd: 10, feedback: 'Failed! Server rack melted and shut down (+35m).' }
-        ]
-      },
-      boardroom_ceo: {
-        title: '📊 BOARDROOM: CEO PITCH',
-        question: 'The CEO asks: "How does AI guarantee our market leadership?"',
-        options: [
-          { text: '1) "AI boosts productivity by 3x & delivers customized solutions."', correct: true, feedback: 'Success! Board approves full AI transformation!' },
-          { text: '2) "We will replace all humans with a basic chatbot."', correct: false, penaltyMins: 30, penaltyVal: 2000000, feedback: 'Failed! Share price plunged on bad PR (-$2.0M).' },
-          { text: '3) "AI is just a buzzword, let\'s stick to fax machines."', correct: false, penaltyMins: 30, penaltyProd: 10, feedback: 'Failed! CEO lost confidence in your vision (+30m).' }
-        ]
-      }
-    };
   }
 
   createQuizModal() {
@@ -490,32 +495,41 @@ export class MainScene extends Phaser.Scene {
 
     if (this.completedTasks[taskId]) {
       soundManager.playWrong();
-      this.showNotification(this.player.x, this.player.y - 40, 'Already completed this task!', '#ebcb8b');
+      this.showNotification(this.player.x, this.player.y - 40, t('already_completed'), '#ebcb8b');
       return;
     }
 
     // Check prerequisites
     if (taskId === 'dev_team' && !this.completedTasks.whiteboard) {
       soundManager.playWrong();
-      this.showNotification(1150, this.FLOOR_Y - 80, 'Plan AI Roadmap on Whiteboard first!', '#bf616a');
+      this.showNotification(1150, this.FLOOR_Y - 80, t('prereq_whiteboard'), '#bf616a');
       return;
     }
     if (taskId === 'server_engineer' && !this.completedTasks.dev_team) {
       soundManager.playWrong();
-      this.showNotification(2050, this.FLOOR_Y - 80, 'Train Devs on AI Copilot first!', '#bf616a');
+      this.showNotification(2050, this.FLOOR_Y - 80, t('prereq_dev_team'), '#bf616a');
       return;
     }
     if (taskId === 'boardroom_ceo' && this.aiAdoption < 75) {
       soundManager.playWrong();
-      this.showNotification(2950, this.FLOOR_Y - 80, 'CEO wants >= 75% AI Adoption before pitch!', '#bf616a');
+      this.showNotification(2950, this.FLOOR_Y - 80, t('prereq_boardroom'), '#bf616a');
       return;
     }
 
-    const quizData = this.quizQuestions[taskId];
+    const quizData = this.getQuizQuestions()[taskId];
     if (!quizData) return;
 
     soundManager.playSelect();
     this.activeQuiz = { taskId, quizData };
+
+    this.renderQuizModalContent();
+    this.quizModalContainer.setVisible(true);
+  }
+
+  renderQuizModalContent() {
+    if (!this.activeQuiz) return;
+    const quizData = this.getQuizQuestions()[this.activeQuiz.taskId];
+    this.activeQuiz.quizData = quizData;
 
     this.quizTitleText.setText(quizData.title);
     this.quizQuestionText.setText(quizData.question);
@@ -524,8 +538,6 @@ export class MainScene extends Phaser.Scene {
     quizData.options.forEach((opt, idx) => {
       this.quizOptionTexts[idx].setText(opt.text).setColor('#88c0d0').setVisible(true);
     });
-
-    this.quizModalContainer.setVisible(true);
   }
 
   selectQuizOption(index) {
@@ -582,13 +594,13 @@ export class MainScene extends Phaser.Scene {
         this.productivity += 10;
         this.companyValue += 1000000;
         this.inventory.key_dev_bay = true;
-        this.showNotification(150, this.FLOOR_Y - 80, '✨ DEV BAY KEYCARD OBTAINED!\n+15% AI Adoption, +10% Prod', '#a3be8c');
+        this.showNotification(150, this.FLOOR_Y - 80, t('notif_whiteboard'), '#a3be8c');
         break;
 
       case 'cto_laptop':
         this.productivity += 15;
         this.companyValue += 500000;
-        this.showNotification(450, this.FLOOR_Y - 80, '✨ Code Audit Complete!\n+15% Productivity, +$500k Val', '#88c0d0');
+        this.showNotification(450, this.FLOOR_Y - 80, t('notif_cto_laptop'), '#88c0d0');
         break;
 
       case 'dev_team':
@@ -596,7 +608,7 @@ export class MainScene extends Phaser.Scene {
         this.productivity += 25;
         this.companyValue += 2500000;
         this.inventory.key_server_room = true;
-        this.showNotification(1150, this.FLOOR_Y - 80, '✨ SERVER ROOM CLEARANCE OBTAINED!\n+30% Adoption, +25% Prod', '#a3be8c');
+        this.showNotification(1150, this.FLOOR_Y - 80, t('notif_dev_team'), '#a3be8c');
         break;
 
       case 'server_engineer':
@@ -604,14 +616,14 @@ export class MainScene extends Phaser.Scene {
         this.productivity += 20;
         this.companyValue += 3000000;
         this.inventory.key_boardroom = true;
-        this.showNotification(2050, this.FLOOR_Y - 80, '✨ BOARDROOM PASS OBTAINED!\n+30% Adoption, +$3.0M Val', '#88c0d0');
+        this.showNotification(2050, this.FLOOR_Y - 80, t('notif_server_engineer'), '#88c0d0');
         break;
 
       case 'boardroom_ceo':
         this.aiAdoption = 100;
         this.productivity += 30;
         this.companyValue += 10000000;
-        this.showNotification(2950, this.FLOOR_Y - 80, '🎉 CEO APPROVED PITCH!\n100% AI ADOPTION ACHIEVED!', '#a3be8c');
+        this.showNotification(2950, this.FLOOR_Y - 80, t('notif_boardroom_ceo'), '#a3be8c');
         break;
     }
 
@@ -638,7 +650,7 @@ export class MainScene extends Phaser.Scene {
 
     if (!doorData.locked) {
       soundManager.playSelect();
-      this.showNotification(doorData.x, this.FLOOR_Y - 80, 'Door is already unlocked!', '#a3be8c');
+      this.showNotification(doorData.x, this.FLOOR_Y - 80, t('door_already_unlocked'), '#a3be8c');
       return;
     }
 
@@ -656,15 +668,16 @@ export class MainScene extends Phaser.Scene {
         doorData.badge.setTexture('door_unlocked');
       }
 
-      this.showNotification(doorData.x, this.FLOOR_Y - 80, `🔓 ${doorData.name} UNLOCKED!`, '#a3be8c');
+      const doorName = t(doorData.nameKey);
+      this.showNotification(doorData.x, this.FLOOR_Y - 80, `🔓 ${doorName} ${t('unlocked_msg')}`, '#a3be8c');
     } else {
       soundManager.playWrong();
       let hint = '';
-      if (doorId === 'door1') hint = 'Complete Strategy Roadmap on Whiteboard first!';
-      if (doorId === 'door2') hint = 'Complete Dev Team AI Copilot training first!';
-      if (doorId === 'door3') hint = 'Deploy AI Cluster in Server Room first!';
+      if (doorId === 'door1') hint = t('door1_hint');
+      if (doorId === 'door2') hint = t('door2_hint');
+      if (doorId === 'door3') hint = t('door3_hint');
 
-      this.showNotification(doorData.x, this.FLOOR_Y - 80, `🔒 ACCESS DENIED!\n${hint}`, '#bf616a');
+      this.showNotification(doorData.x, this.FLOOR_Y - 80, `🔒 ${t('access_denied')}\n${hint}`, '#bf616a');
     }
   }
 
@@ -673,7 +686,7 @@ export class MainScene extends Phaser.Scene {
 
     soundManager.playPowerup();
     this.playerSpeed = 340;
-    this.showNotification(1550, this.FLOOR_Y - 80, 'Espresso Power! ⚡ Speed Boost', '#ebcb8b');
+    this.showNotification(1550, this.FLOOR_Y - 80, t('coffee_boost'), '#ebcb8b');
     this.time.delayedCall(12000, () => {
       this.playerSpeed = 220;
     });
@@ -701,7 +714,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   createHUD() {
-    this.hudContainer = this.add.container(0, 0).setScrollFactor(0);
+    this.hudContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(90);
 
     // Top Bar
     const hudBg = this.add.graphics();
@@ -712,41 +725,41 @@ export class MainScene extends Phaser.Scene {
     this.hudContainer.add(hudBg);
 
     // Loop Text
-    this.loopText = this.add.text(15, 15, `LOOP #${this.loopCount}`, {
+    this.loopText = this.add.text(12, 15, `${t('hud_loop')}${this.loopCount}`, {
       fontFamily: 'Courier New',
-      fontSize: '16px',
+      fontSize: '13px',
       color: '#ebcb8b',
       fontStyle: 'bold'
     });
 
     // Clock Display
-    this.clockText = this.add.text(130, 15, 'TIME: 09:00 AM', {
+    this.clockText = this.add.text(95, 15, `${t('hud_time')} 09:00 AM`, {
       fontFamily: 'Courier New',
-      fontSize: '16px',
+      fontSize: '13px',
       color: '#88c0d0',
       fontStyle: 'bold'
     });
 
     // AI Adoption Progress Bar
-    this.adoptionText = this.add.text(310, 15, 'AI ADOPTION: 0%', {
+    this.adoptionText = this.add.text(230, 15, `${t('hud_adoption')} 0%`, {
       fontFamily: 'Courier New',
-      fontSize: '16px',
+      fontSize: '13px',
       color: '#a3be8c',
       fontStyle: 'bold'
     });
 
     // Productivity %
-    this.prodText = this.add.text(530, 15, 'PROD: 30%', {
+    this.prodText = this.add.text(400, 15, `${t('hud_prod')} 30%`, {
       fontFamily: 'Courier New',
-      fontSize: '16px',
+      fontSize: '13px',
       color: '#b48ead',
       fontStyle: 'bold'
     });
 
     // Company Valuation ($)
-    this.valueText = this.add.text(700, 15, 'VAL: $10.0M', {
+    this.valueText = this.add.text(510, 15, `${t('hud_val')} $10.0M`, {
       fontFamily: 'Courier New',
-      fontSize: '16px',
+      fontSize: '13px',
       color: '#d8dee9',
       fontStyle: 'bold'
     });
@@ -758,6 +771,75 @@ export class MainScene extends Phaser.Scene {
       this.prodText,
       this.valueText
     ]);
+
+    // Language selector buttons in top right of HUD
+    this.createHudLangButtons();
+  }
+
+  createHudLangButtons() {
+    this.hudLangButtons = [];
+    const startX = 645;
+    const btnY = 25;
+
+    LANGUAGES.forEach((lang, index) => {
+      const btnX = startX + index * 52;
+      const isSelected = getLanguage() === lang.code;
+
+      const btnBg = this.add.text(btnX, btnY, lang.code.toUpperCase(), {
+        fontFamily: 'Courier New',
+        fontSize: '12px',
+        color: isSelected ? '#00ffcc' : '#88c0d0',
+        backgroundColor: isSelected ? '#2e3440' : '#1b1d28',
+        padding: { x: 4, y: 3 }
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+      btnBg.on('pointerdown', () => {
+        soundManager.playSelect();
+        setLanguage(lang.code);
+      });
+
+      btnBg.on('pointerover', () => {
+        if (getLanguage() !== lang.code) {
+          btnBg.setColor('#ffffff');
+        }
+      });
+
+      btnBg.on('pointerout', () => {
+        if (getLanguage() !== lang.code) {
+          btnBg.setColor('#88c0d0');
+        }
+      });
+
+      this.hudContainer.add(btnBg);
+      this.hudLangButtons.push({ code: lang.code, button: btnBg });
+    });
+  }
+
+  updateTextsOnLangChange() {
+    // Room headers
+    this.roomTextElements.forEach(room => {
+      room.text.setText(t(room.key));
+    });
+
+    // HUD Text
+    this.updateHUDDisplay();
+
+    // Language selector buttons highlight
+    this.hudLangButtons.forEach(item => {
+      const isSelected = getLanguage() === item.code;
+      item.button.setColor(isSelected ? '#00ffcc' : '#88c0d0');
+      item.button.setBackgroundColor(isSelected ? '#2e3440' : '#1b1d28');
+    });
+
+    // Active quiz modal if open
+    if (this.activeQuiz) {
+      this.renderQuizModalContent();
+    }
+
+    // Active proximity prompt if active
+    if (this.activeInteractable) {
+      this.promptText.setText(t(this.activeInteractable.promptKey));
+    }
   }
 
   tickClock() {
@@ -782,9 +864,10 @@ export class MainScene extends Phaser.Scene {
   }
 
   updateHUDDisplay() {
-    this.clockText.setText(`TIME: ${this.formatTime(this.timeMinutes)}`);
-    this.adoptionText.setText(`AI ADOPTION: ${Math.round(this.aiAdoption)}%`);
-    this.prodText.setText(`PROD: ${Math.round(this.productivity)}%`);
+    this.loopText.setText(`${t('hud_loop')}${this.loopCount}`);
+    this.clockText.setText(`${t('hud_time')} ${this.formatTime(this.timeMinutes)}`);
+    this.adoptionText.setText(`${t('hud_adoption')} ${Math.round(this.aiAdoption)}%`);
+    this.prodText.setText(`${t('hud_prod')} ${Math.round(this.productivity)}%`);
 
     let valStr = '';
     if (this.companyValue >= 1000000) {
@@ -792,7 +875,7 @@ export class MainScene extends Phaser.Scene {
     } else {
       valStr = `$${Math.round(this.companyValue).toLocaleString()}`;
     }
-    this.valueText.setText(`VAL: ${valStr}`);
+    this.valueText.setText(`${t('hud_val')} ${valStr}`);
   }
 
   checkEndCondition() {
@@ -882,7 +965,7 @@ export class MainScene extends Phaser.Scene {
 
     if (closest) {
       this.promptContainer.setPosition(closest.x, closest.y - 60);
-      this.promptText.setText(closest.prompt);
+      this.promptText.setText(t(closest.promptKey));
       this.promptContainer.setVisible(true);
 
       if (Phaser.Input.Keyboard.JustDown(this.wasd.interact)) {
@@ -890,6 +973,12 @@ export class MainScene extends Phaser.Scene {
       }
     } else {
       this.promptContainer.setVisible(false);
+    }
+  }
+
+  shutdown() {
+    if (this.unsubscribeLang) {
+      this.unsubscribeLang();
     }
   }
 }
