@@ -78,40 +78,82 @@ export class MainScene extends Phaser.Scene {
     const bgGraphics = this.add.graphics();
 
     // 1. CTO Office (x: 0 - 800)
-    bgGraphics.fillStyle(0x2e3440, 1);
+    bgGraphics.fillStyle(0x1f293d, 1); // Dark Navy Wall
     bgGraphics.fillRect(0, 0, 800, 540);
-    bgGraphics.fillStyle(0x3b4252, 1);
-    bgGraphics.fillRect(0, 0, 800, 40);
+    // Lower Wood Paneling
+    bgGraphics.fillStyle(0x2c1f14, 1);
+    bgGraphics.fillRect(0, 280, 800, 180);
+    bgGraphics.fillStyle(0x3d2b1d, 1); // Molding Trim
+    bgGraphics.fillRect(0, 276, 800, 6);
+    // Wood Floor Planks
+    bgGraphics.fillStyle(0x4a3222, 1);
+    bgGraphics.fillRect(0, this.FLOOR_Y, 800, 80);
+    bgGraphics.fillStyle(0x3a2619, 1);
+    for (let x = 0; x < 800; x += 60) {
+      bgGraphics.fillRect(x, this.FLOOR_Y, 2, 80);
+    }
 
     // 2. Dev Bay (x: 800 - 1600)
-    bgGraphics.fillStyle(0x282c34, 1);
+    bgGraphics.fillStyle(0x1e222a, 1); // Tech Dark Grey
     bgGraphics.fillRect(800, 0, 800, 540);
-    bgGraphics.fillStyle(0x21252b, 1);
-    bgGraphics.fillRect(800, 0, 800, 40);
+    bgGraphics.fillStyle(0x00d2d3, 0.7); // Cyan LED Duct Stripe
+    bgGraphics.fillRect(800, 50, 800, 4);
+    // Anti-static Tile Flooring
+    bgGraphics.fillStyle(0x2d3748, 1);
+    bgGraphics.fillRect(800, this.FLOOR_Y, 800, 80);
+    bgGraphics.fillStyle(0x1a202c, 1);
+    for (let x = 800; x < 1600; x += 40) {
+      bgGraphics.fillRect(x, this.FLOOR_Y, 2, 80);
+    }
+    bgGraphics.fillRect(800, this.FLOOR_Y + 40, 800, 2);
 
     // 3. Server Room (x: 1600 - 2400)
-    bgGraphics.fillStyle(0x1a1c23, 1);
+    bgGraphics.fillStyle(0x111625, 1); // Industrial Deep Blue
     bgGraphics.fillRect(1600, 0, 800, 540);
-    bgGraphics.fillStyle(0x121419, 1);
-    bgGraphics.fillRect(1600, 0, 800, 40);
+    // Overhead Liquid Cooling Conduit Pipes
+    bgGraphics.fillStyle(0x34495e, 1);
+    bgGraphics.fillRect(1600, 30, 800, 10);
+    bgGraphics.fillStyle(0x00f2fe, 1); // Glowing coolant core
+    bgGraphics.fillRect(1600, 33, 800, 4);
+    // Raised Metal Server Floor Tiles
+    bgGraphics.fillStyle(0x1a202c, 1);
+    bgGraphics.fillRect(1600, this.FLOOR_Y, 800, 80);
+    bgGraphics.fillStyle(0x2d3748, 1);
+    for (let x = 1600; x < 2400; x += 50) {
+      bgGraphics.fillRect(x, this.FLOOR_Y, 2, 80);
+    }
+    bgGraphics.fillRect(1600, this.FLOOR_Y + 40, 800, 2);
 
     // 4. Boardroom (x: 2400 - 3200)
-    bgGraphics.fillStyle(0x3b4252, 1);
+    bgGraphics.fillStyle(0x2e1f3d, 1); // Executive Slate Purple
     bgGraphics.fillRect(2400, 0, 800, 540);
-    bgGraphics.fillStyle(0x434c5e, 1);
-    bgGraphics.fillRect(2400, 0, 800, 40);
+    bgGraphics.fillStyle(0xd4af37, 0.8); // Gold Crown Molding Trim
+    bgGraphics.fillRect(2400, 40, 800, 4);
+    // Polished Dark Wood Floor
+    bgGraphics.fillStyle(0x3a2318, 1);
+    bgGraphics.fillRect(2400, this.FLOOR_Y, 800, 80);
+    bgGraphics.fillStyle(0x29180e, 1);
+    for (let x = 2400; x < 3200; x += 80) {
+      bgGraphics.fillRect(x, this.FLOOR_Y, 2, 80);
+    }
 
-    // Floor platform line
+    // Top Header Wall Borders across all rooms
+    bgGraphics.fillStyle(0x0f111a, 0.9);
+    bgGraphics.fillRect(0, 0, this.WORLD_WIDTH, 40);
+    bgGraphics.fillStyle(0x3b4252, 1);
+    bgGraphics.fillRect(0, 38, this.WORLD_WIDTH, 2);
+
+    // Skirting Baseboard along entire floor line
+    bgGraphics.fillStyle(0x1a1c23, 1);
+    bgGraphics.fillRect(0, this.FLOOR_Y - 4, this.WORLD_WIDTH, 4);
+
+    // Floor physics setup
     const floor = this.physics.add.staticGroup();
-    const floorGraphic = this.add.graphics();
-    floorGraphic.fillStyle(0x4c566a, 1);
-    floorGraphic.fillRect(0, this.FLOOR_Y, this.WORLD_WIDTH, 80);
-
     const floorRect = this.add.rectangle(this.WORLD_WIDTH / 2, this.FLOOR_Y + 40, this.WORLD_WIDTH, 80, 0x000000, 0);
     floor.add(floorRect);
     this.floorLayer = floor;
 
-    // Room Partition Labels
+    // Room Partition Labels (Positioned right below top HUD bar)
     const roomNames = [
       { name: '1. CTO OFFICE', x: 400 },
       { name: '2. DEV BAY', x: 1200 },
@@ -120,13 +162,19 @@ export class MainScene extends Phaser.Scene {
     ];
 
     roomNames.forEach(room => {
-      this.add.text(room.x, 20, room.name, {
+      this.add.text(room.x, 65, room.name, {
         fontFamily: 'Courier New',
-        fontSize: '20px',
-        color: '#d8dee9',
+        fontSize: '16px',
+        color: '#88c0d0',
         fontStyle: 'bold'
       }).setOrigin(0.5);
     });
+
+    // Place Background Windows & Decorative Wall Items
+    this.add.image(300, 150, 'city_window');
+    this.add.image(2600, 150, 'city_window');
+    this.add.image(600, 110, 'wall_clock');
+    this.add.image(950, 140, 'wall_poster');
 
     // Place Doors between rooms
     const doorXPositions = [800, 1600, 2400];
@@ -134,21 +182,26 @@ export class MainScene extends Phaser.Scene {
       this.add.image(x, this.FLOOR_Y - 70, 'doorway');
     });
 
-    // Place Decorative Furnishings & NPCs
-    this.add.image(150, this.FLOOR_Y - 30, 'whiteboard');
+    // Place Decorative Plants
+    this.add.image(60, this.FLOOR_Y - 24, 'office_plant');
+    this.add.image(1500, this.FLOOR_Y - 24, 'office_plant');
+    this.add.image(3140, this.FLOOR_Y - 24, 'office_plant');
+
+    // Place Interactive Furniture & NPCs
+    this.add.image(180, this.FLOOR_Y - 32, 'whiteboard');
     this.add.image(450, this.FLOOR_Y - 26, 'cto_desk');
 
     this.add.image(1000, this.FLOOR_Y - 26, 'dev_station');
     this.add.image(1300, this.FLOOR_Y - 26, 'dev_station');
-    this.add.image(1550, this.FLOOR_Y - 22.5, 'coffee_machine');
+    this.add.image(1550, this.FLOOR_Y - 23, 'coffee_machine');
     this.add.image(1150, this.FLOOR_Y - 24, 'npc_dev');
 
-    this.add.image(1750, this.FLOOR_Y - 60, 'server_rack');
-    this.add.image(1900, this.FLOOR_Y - 60, 'server_rack');
-    this.add.image(2150, this.FLOOR_Y - 50, 'gpu_cluster');
+    this.add.image(1750, this.FLOOR_Y - 61, 'server_rack');
+    this.add.image(1900, this.FLOOR_Y - 61, 'server_rack');
+    this.add.image(2150, this.FLOOR_Y - 52, 'gpu_cluster');
     this.add.image(2050, this.FLOOR_Y - 24, 'npc_eng');
 
-    this.add.image(2800, 200, 'board_screen');
+    this.add.image(2800, 190, 'board_screen');
     this.add.image(2950, this.FLOOR_Y - 24, 'npc_ceo');
   }
 
@@ -157,6 +210,29 @@ export class MainScene extends Phaser.Scene {
     this.player.setCollideWorldBounds(true);
     this.physics.add.collider(this.player, this.floorLayer);
     this.playerSpeed = 220;
+
+    // Register Player Animations
+    if (!this.anims.exists('player_walk')) {
+      this.anims.create({
+        key: 'player_walk',
+        frames: [
+          { key: 'player_walk_1' },
+          { key: 'player_walk_2' },
+          { key: 'player_walk_3' },
+          { key: 'player_walk_2' }
+        ],
+        frameRate: 8,
+        repeat: -1
+      });
+    }
+
+    if (!this.anims.exists('player_idle')) {
+      this.anims.create({
+        key: 'player_idle',
+        frames: [{ key: 'player_idle' }],
+        frameRate: 1
+      });
+    }
   }
 
   setupCamera() {
@@ -453,9 +529,13 @@ export class MainScene extends Phaser.Scene {
     if (this.cursors.left.isDown || this.wasd.left.isDown) {
       moveX = -this.playerSpeed;
       this.player.setFlipX(true);
+      this.player.anims.play('player_walk', true);
     } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
       moveX = this.playerSpeed;
       this.player.setFlipX(false);
+      this.player.anims.play('player_walk', true);
+    } else {
+      this.player.anims.play('player_idle', true);
     }
 
     this.player.setVelocityX(moveX);
