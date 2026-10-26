@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { createGameTextures } from '../utils/TextureGenerator.js';
+import { soundManager } from '../utils/SoundManager.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -38,6 +39,7 @@ export class BootScene extends Phaser.Scene {
     });
 
     this.input.keyboard.once('keydown-SPACE', () => {
+      soundManager.playSelect();
       this.scene.start('MainScene', { loopCount: 1 });
     });
   }

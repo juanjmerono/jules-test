@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { soundManager } from '../utils/SoundManager.js';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -11,6 +12,7 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   create() {
+    soundManager.playGameOver();
     this.add.rectangle(480, 270, 960, 540, 0x0f111a, 0.95);
 
     this.add.text(480, 120, '5:00 PM - WORKDAY OVER!', {
@@ -63,6 +65,7 @@ export class GameOverScene extends Phaser.Scene {
     });
 
     this.input.keyboard.once('keydown-R', () => {
+      soundManager.playSelect();
       this.scene.start('MainScene', { loopCount: this.loopCount + 1 });
     });
   }
