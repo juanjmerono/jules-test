@@ -270,7 +270,7 @@ export class MainScene extends Phaser.Scene {
 
     this.add.image(1000, this.FLOOR_Y - 26, 'dev_station');
     this.add.image(1300, this.FLOOR_Y - 26, 'dev_station');
-    this.add.image(1550, this.FLOOR_Y - 23, 'coffee_machine');
+    this.add.image(1450, this.FLOOR_Y - 23, 'coffee_machine');
     this.add.image(1150, this.FLOOR_Y - 24, 'npc_dev');
 
     this.add.image(1750, this.FLOOR_Y - 61, 'server_rack');
@@ -385,7 +385,7 @@ export class MainScene extends Phaser.Scene {
       },
       {
         id: 'coffee',
-        x: 1550,
+        x: 1450,
         y: this.FLOOR_Y - 22,
         radius: 60,
         promptKey: 'prompt_coffee',
@@ -686,7 +686,7 @@ export class MainScene extends Phaser.Scene {
 
     soundManager.playPowerup();
     this.playerSpeed = 340;
-    this.showNotification(1550, this.FLOOR_Y - 80, t('coffee_boost'), '#ebcb8b');
+    this.showNotification(1450, this.FLOOR_Y - 80, t('coffee_boost'), '#ebcb8b');
     this.time.delayedCall(12000, () => {
       this.playerSpeed = 220;
     });
